@@ -60,27 +60,18 @@ public final class Message implements Serializable {
      * <p>
      * It is an error to attempt to enqueue or recycle a message that is already in use.
      */
-    /*package*/ static final int FLAG_IN_USE = 1 << 0;
+    private static final int FLAG_IN_USE = 1;
+    private static final int FLAGS_TO_CLEAR_ON_COPY_FROM = FLAG_IN_USE;
 
-    /**
-     * If set message is asynchronous
-     */
-    /*package*/ static final int FLAG_ASYNCHRONOUS = 1 << 1;
+    private int flags;
 
-    /**
-     * Flags to clear in the copyFrom method
-     */
-    /*package*/ static final int FLAGS_TO_CLEAR_ON_COPY_FROM = FLAG_IN_USE;
+    private long when;
 
-    /*package*/ int flags;
+    private Object data;
 
-    /*package*/ long when;
+    private Handler target;
 
-    /*package*/ Object data;
-
-    /*package*/ Handler target;
-
-    /*package*/ Runnable callback;
+    private Runnable callback;
 
     // sometimes we store linked lists of these things
     /*package*/ Message next;
@@ -311,8 +302,12 @@ public final class Message implements Serializable {
     /**
      * Return the targeted delivery time of this message, in milliseconds.
      */
-    public long getWhen() {
+    public long when() {
         return when;
+    }
+
+    public void setWhen(final long when) {
+        this.when = when;
     }
 
     public void setTarget(Handler target) {
@@ -326,7 +321,7 @@ public final class Message implements Serializable {
      * message codes, so you do not need to
      * worry about yours conflicting with other handlers.
      */
-    public Handler getTarget() {
+    public Handler target() {
         return target;
     }
 
@@ -338,8 +333,12 @@ public final class Message implements Serializable {
      * not set, the message will be dispatched to the receiving base.Handler's
      * {@link Handler#handleMessage(Message base.Handler.handleMessage())}.
      */
-    public Runnable getCallback() {
+    public Runnable callback() {
         return callback;
+    }
+
+    public void setCallback(final Runnable callback) {
+        this.callback = callback;
     }
 
     /**
@@ -381,55 +380,11 @@ public final class Message implements Serializable {
     }
 
     /**
-     * Sends this base.Message to the base.Handler specified by {@link #getTarget}.
+     * Sends this base.Message to the base.Handler specified by {@link #target}.
      * Throws a null pointer exception if this field has not been set.
      */
     public void sendToTarget() {
         target.sendMessage(this);
-    }
-
-    /**
-     * Returns true if the message is asynchronous, meaning that it is not
-     * subject to {@link Looper} synchronization barriers.
-     *
-     * @return True if the message is asynchronous.
-     * @see #setAsynchronous(boolean)
-     */
-    public boolean isAsynchronous() {
-        return (flags & FLAG_ASYNCHRONOUS) != 0;
-    }
-
-    /**
-     * Sets whether the message is asynchronous, meaning that it is not
-     * subject to {@link Looper} synchronization barriers.
-     * <p>
-     * Certain operations, such as view invalidation, may introduce synchronization
-     * barriers into the {@link Looper}'s message queue to prevent subsequent messages
-     * from being delivered until some condition is met.  In the case of view invalidation,
-     * messages which are posted after a call to View#invalidate
-     * are suspended by means of a synchronization barrier until the next frame is
-     * ready to be drawn.  The synchronization barrier ensures that the invalidation
-     * request is completely handled before resuming.
-     * </p><p>
-     * Asynchronous messages are exempt from synchronization barriers.  They typically
-     * represent interrupts, input events, and other signals that must be handled independently
-     * even while other work has been suspended.
-     * </p><p>
-     * Note that asynchronous messages may be delivered out of order with respect to
-     * synchronous messages although they are always delivered in order among themselves.
-     * If the relative order of these messages matters then they probably should not be
-     * asynchronous in the first place.  Use with caution.
-     * </p>
-     *
-     * @param async True if the message is asynchronous.
-     * @see #isAsynchronous()
-     */
-    public void setAsynchronous(boolean async) {
-        if (async) {
-            flags |= FLAG_ASYNCHRONOUS;
-        } else {
-            flags &= ~FLAG_ASYNCHRONOUS;
-        }
     }
 
     /*package*/ boolean isInUse() {
@@ -443,6 +398,6 @@ public final class Message implements Serializable {
     /**
      * Constructor (but the preferred way to get a base.Message is to call {@link #obtain() base.Message.obtain()}).
      */
-    public Message() {
+    private Message() {
     }
 }

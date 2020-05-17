@@ -1,7 +1,7 @@
 package com.anmol.demo;
 
 import com.anmol.apps.ConsumerThread;
-import com.anmol.apps.Publisher;
+import com.anmol.apps.Message;
 
 public class MainThread extends ConsumerThread {
 
@@ -13,7 +13,15 @@ public class MainThread extends ConsumerThread {
 
     @Override
     protected void onRun() {
-        new Publisher(toSendDataTo).post(() -> System.out.println("Sent by " + getName() + ", and Received by: " + Thread.currentThread().getName()));
+        toSendDataTo.post(() -> System.out.println("Sent by " + getName() + ", and Received by: " + Thread.currentThread().getName()));
+        Message obtain = Message.obtain();
+        obtain.setData("Sent by " + getName());
+        toSendDataTo.sendMessage(obtain);
+    }
+
+    @Override
+    protected void onMessage(final Message msg) {
+        System.out.println(msg.data() + ", and Received by: " + Thread.currentThread().getName());
     }
 
     public void setToSendDataTo(final ConsumerThread toSendDataTo) {

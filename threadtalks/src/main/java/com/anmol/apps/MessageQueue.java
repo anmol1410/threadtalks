@@ -47,9 +47,6 @@ public final class MessageQueue {
     }
 
     boolean enqueueMessage(Message msg, long when) {
-        if (msg.target() == null) {
-            throw new IllegalArgumentException("Message must have a target().");
-        }
         if (msg.isInUse()) {
             throw new IllegalStateException(msg + " This message is already in use.");
         }
@@ -80,14 +77,11 @@ public final class MessageQueue {
         return true;
     }
 
-    boolean hasMessages(Publisher h, int what, Object object) {
-        if (h == null) {
-            return false;
-        }
+    boolean hasMessages(final Object object) {
         synchronized (this) {
             Message p = mMessages;
             while (p != null) {
-                if (p.target() == h && p.what == what && (object == null || p.obj == object)) {
+                if ((object == null || p.data() == object)) {
                     return true;
                 }
                 p = p.next;
@@ -96,15 +90,12 @@ public final class MessageQueue {
         }
     }
 
-    boolean hasMessages(Publisher h, Runnable r, Object object) {
-        if (h == null) {
-            return false;
-        }
+    boolean hasMessages(final Runnable r, final Object object) {
 
         synchronized (this) {
             Message p = mMessages;
             while (p != null) {
-                if (p.target() == h && p.callback() == r && (object == null || p.obj == object)) {
+                if (p.callback() == r && (object == null || p.data() == object)) {
                     return true;
                 }
                 p = p.next;
@@ -113,17 +104,12 @@ public final class MessageQueue {
         }
     }
 
-    void removeMessages(Publisher h, int what, Object object) {
-        if (h == null) {
-            return;
-        }
-
+    void removeMessages(final Object object) {
         synchronized (this) {
             Message p = mMessages;
 
             // Remove all messages at front.
-            while (p != null && p.target() == h && p.what == what
-                    && (object == null || p.obj == object)) {
+            while (p != null && (object == null || p.data() == object)) {
                 Message n = p.next;
                 mMessages = n;
                 p.recycleUnchecked();
@@ -134,8 +120,7 @@ public final class MessageQueue {
             while (p != null) {
                 Message n = p.next;
                 if (n != null) {
-                    if (n.target() == h && n.what == what
-                            && (object == null || n.obj == object)) {
+                    if (n.data() == object) {
                         Message nn = n.next;
                         n.recycleUnchecked();
                         p.next = nn;
@@ -147,8 +132,8 @@ public final class MessageQueue {
         }
     }
 
-    void removeMessages(Publisher h, Runnable r, Object object) {
-        if (h == null || r == null) {
+    void removeMessages(final Runnable r, final Object object) {
+        if (r == null) {
             return;
         }
 
@@ -156,8 +141,7 @@ public final class MessageQueue {
             Message p = mMessages;
 
             // Remove all messages at front.
-            while (p != null && p.target() == h && p.callback() == r
-                    && (object == null || p.obj == object)) {
+            while (p != null && p.callback() == r && (object == null || p.data() == object)) {
                 Message n = p.next;
                 mMessages = n;
                 p.recycleUnchecked();
@@ -168,8 +152,7 @@ public final class MessageQueue {
             while (p != null) {
                 Message n = p.next;
                 if (n != null) {
-                    if (n.target() == h && n.callback() == r
-                            && (object == null || n.obj == object)) {
+                    if (n.callback() == r && (object == null || n.data() == object)) {
                         Message nn = n.next;
                         n.recycleUnchecked();
                         p.next = nn;
@@ -181,18 +164,13 @@ public final class MessageQueue {
         }
     }
 
-    void removeCallbacksAndMessages(Publisher h, Object object) {
-        if (h == null) {
-            return;
-        }
-
+    void removeCallbacksAndMessages(final Object object) {
         synchronized (this) {
             Message p = mMessages;
 
             // Remove all messages at front.
-            while (p != null && p.target() == h
-                    && (object == null || p.obj == object)) {
-                Message n = p.next;
+            while (p != null && (object == null || p.data() == object)) {
+                final Message n = p.next;
                 mMessages = n;
                 p.recycleUnchecked();
                 p = n;
@@ -200,9 +178,9 @@ public final class MessageQueue {
 
             // Remove all messages after front.
             while (p != null) {
-                Message n = p.next;
+                final Message n = p.next;
                 if (n != null) {
-                    if (n.target() == h && (object == null || n.obj == object)) {
+                    if (n.data() == object) {
                         Message nn = n.next;
                         n.recycleUnchecked();
                         p.next = nn;
@@ -217,7 +195,7 @@ public final class MessageQueue {
     private void removeAllMessagesLocked() {
         Message p = mMessages;
         while (p != null) {
-            Message n = p.next;
+            final Message n = p.next;
             p.recycleUnchecked();
             p = n;
         }

@@ -12,7 +12,7 @@ public final class Consumer {
         mThread = Thread.currentThread();
     }
 
-    public static void init() {
+    static void init() {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Spinner may be created per thread");
         }
@@ -31,7 +31,11 @@ public final class Consumer {
                 // No message indicates that the message queue is quitting.
                 return;
             }
-            msg.target().dispatchMessage(msg);
+            if (msg.callback() != null) {
+                msg.callback().run();
+            } else {
+                ((ConsumerThread) myConsumer().getThread()).onMessage(msg);
+            }
             msg.recycleUnchecked();
         }
     }

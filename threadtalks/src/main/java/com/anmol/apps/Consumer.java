@@ -1,23 +1,28 @@
 package com.anmol.apps;
 
-public final class Looper {
+public final class Consumer {
 
-    private static final ThreadLocal<Looper> sThreadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<Consumer> sThreadLocal = new ThreadLocal<>();
 
     private final MessageQueue mQueue;
     private final Thread mThread;
 
-    public static void prepare() {
-        if (sThreadLocal.get() != null) {
-            throw new RuntimeException("Only one Looper may be created per thread");
-        }
-        sThreadLocal.set(new Looper());
+    private Consumer() {
+        mQueue = new MessageQueue();
+        mThread = Thread.currentThread();
     }
 
-    public static void loop() {
-        final Looper me = myLooper();
+    public static void init() {
+        if (sThreadLocal.get() != null) {
+            throw new RuntimeException("Only one Spinner may be created per thread");
+        }
+        sThreadLocal.set(new Consumer());
+    }
+
+    public static void consume() {
+        final Consumer me = myConsumer();
         if (me == null) {
-            throw new RuntimeException("No Looper; Looper.prepare() wasn't called on this thread.");
+            throw new RuntimeException("No Consumer::Consumer.init() wasn't called on this thread.");
         }
 
         for (; ; ) {
@@ -31,29 +36,24 @@ public final class Looper {
         }
     }
 
-    public static Looper myLooper() {
+    public static Consumer myConsumer() {
         return sThreadLocal.get();
     }
 
     public static MessageQueue myQueue() {
-        return myLooper().mQueue;
-    }
-
-    private Looper() {
-        mQueue = new MessageQueue();
-        mThread = Thread.currentThread();
+        return myConsumer().mQueue;
     }
 
     public boolean isCurrentThread() {
         return Thread.currentThread() == mThread;
     }
 
-    public void quit() {
-        mQueue.quit(false);
+    public void stop() {
+        mQueue.stop(false);
     }
 
-    public void quitSafely() {
-        mQueue.quit(true);
+    public void stopSafely() {
+        mQueue.stop(true);
     }
 
     public Thread getThread() {

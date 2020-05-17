@@ -1,26 +1,30 @@
 package com.anmol.apps;
 
-public class Handler {
-    private final Looper mLooper;
+public class Publisher {
+    private final Consumer mConsumer;
     private final MessageQueue mQueue;
     private final Callback mCallback;
 
-    public Handler(final Looper looper) {
-        this(looper, null);
+    public Publisher(final ConsumerThread consumerThread) {
+        this(consumerThread.consumer(), null);
     }
 
-    public Handler(final Looper looper, final Callback callback) {
-        mLooper = looper;
-        mQueue = looper.queue();
+    public Publisher(final Consumer consumer) {
+        this(consumer, null);
+    }
+
+    public Publisher(final Consumer consumer, final Callback callback) {
+        mConsumer = consumer;
+        mQueue = consumer.queue();
         mCallback = callback;
     }
 
-    public Handler(final Callback callback) {
-        mLooper = Looper.myLooper();
-        if (mLooper == null) {
+    public Publisher(final Callback callback) {
+        mConsumer = Consumer.myConsumer();
+        if (mConsumer == null) {
             throw new RuntimeException("Can't create handler inside thread that has not called base.Looper.prepare()");
         }
-        mQueue = mLooper.queue();
+        mQueue = mConsumer.queue();
         mCallback = callback;
     }
 
@@ -122,9 +126,6 @@ public class Handler {
     public boolean sendMessageAtTime(Message msg, long uptimeMillis) {
         MessageQueue queue = mQueue;
         if (queue == null) {
-            RuntimeException e = new RuntimeException(
-                    this + " sendMessageAtTime() called with no mQueue");
-            Log.w("base.Looper", e.getMessage(), e);
             return false;
         }
         return enqueueMessage(queue, msg, uptimeMillis);
@@ -133,9 +134,6 @@ public class Handler {
     public final boolean sendMessageAtFrontOfQueue(Message msg) {
         MessageQueue queue = mQueue;
         if (queue == null) {
-            RuntimeException e = new RuntimeException(
-                    this + " sendMessageAtTime() called with no mQueue");
-            Log.w("base.Looper", e.getMessage(), e);
             return false;
         }
         return enqueueMessage(queue, msg, 0);
@@ -170,8 +168,8 @@ public class Handler {
         return mQueue.hasMessages(this, r, null);
     }
 
-    public final Looper getLooper() {
-        return mLooper;
+    public final Consumer getLooper() {
+        return mConsumer;
     }
 
     private static Message getPostMessage(Runnable r) {

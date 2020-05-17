@@ -3,7 +3,7 @@ package com.anmol.apps;
 public final class MessageQueue {
 
     private Message mMessages;
-    private boolean mQuitting;
+    private boolean mStopping;
 
     Message next() {
         for (; ; ) {
@@ -21,19 +21,19 @@ public final class MessageQueue {
                     }
                 }
 
-                if (mQuitting) {
+                if (mStopping) {
                     return null;
                 }
             }
         }
     }
 
-    void quit(final boolean safe) {
+    void stop(final boolean safe) {
         synchronized (this) {
-            if (mQuitting) {
+            if (mStopping) {
                 return;
             }
-            mQuitting = true;
+            mStopping = true;
 
             if (safe) {
                 removeAllFutureMessagesLocked();
@@ -41,7 +41,7 @@ public final class MessageQueue {
                 removeAllMessagesLocked();
             }
 
-            // We can assume mPtr != 0 because mQuitting was previously false.
+            // We can assume mPtr != 0 because mStopping was previously false.
             notifyAll();
         }
     }
@@ -55,7 +55,7 @@ public final class MessageQueue {
         }
 
         synchronized (this) {
-            if (mQuitting) {
+            if (mStopping) {
                 msg.recycle();
                 return false;
             }
@@ -80,7 +80,7 @@ public final class MessageQueue {
         return true;
     }
 
-    boolean hasMessages(Handler h, int what, Object object) {
+    boolean hasMessages(Publisher h, int what, Object object) {
         if (h == null) {
             return false;
         }
@@ -96,7 +96,7 @@ public final class MessageQueue {
         }
     }
 
-    boolean hasMessages(Handler h, Runnable r, Object object) {
+    boolean hasMessages(Publisher h, Runnable r, Object object) {
         if (h == null) {
             return false;
         }
@@ -113,7 +113,7 @@ public final class MessageQueue {
         }
     }
 
-    void removeMessages(Handler h, int what, Object object) {
+    void removeMessages(Publisher h, int what, Object object) {
         if (h == null) {
             return;
         }
@@ -147,7 +147,7 @@ public final class MessageQueue {
         }
     }
 
-    void removeMessages(Handler h, Runnable r, Object object) {
+    void removeMessages(Publisher h, Runnable r, Object object) {
         if (h == null || r == null) {
             return;
         }
@@ -181,7 +181,7 @@ public final class MessageQueue {
         }
     }
 
-    void removeCallbacksAndMessages(Handler h, Object object) {
+    void removeCallbacksAndMessages(Publisher h, Object object) {
         if (h == null) {
             return;
         }
